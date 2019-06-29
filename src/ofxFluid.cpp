@@ -43,7 +43,6 @@
 ofxFluid::ofxFluid(){
     //passes = 1;
     //internalFormat = GL_RGBA;
-
     
     // ADVECT
     string fragmentAdvectShader = R"(
@@ -73,9 +72,9 @@ ofxFluid::ofxFluid(){
     
     advectShader.unload();
     advectShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentAdvectShader);
+    advectShader.bindDefaults();
     advectShader.linkProgram();
-    
-    
+
                        
     // JACOBI
     string fragmentJacobiShader = R"(
@@ -295,33 +294,52 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     gridWidth = width * scale;
     gridHeight = height * scale;
     
-    colorBuffer.allocate(gridWidth,gridHeight,(_HD)?GL_RGBA32F:GL_RGBA);
-    dissipation = 0.999f;
-    velocityBuffer.allocate(gridWidth,gridHeight,GL_RGB32F);
-    velocityDissipation = 0.9f;
-    temperatureBuffer.allocate(gridWidth,gridHeight,GL_RGB32F);
-    temperatureDissipation = 0.99f;
-    pressureBuffer.allocate(gridWidth,gridHeight,GL_RGB32F);
-    pressureDissipation = 0.9f;
+    ofFboSettings settings;
+    settings.width = gridWidth;
+    settings.height = gridHeight;
+    settings.internalformat = (_HD) ? GL_RGBA32F:GL_RGBA;
     
-    initFbo(obstaclesFbo, gridWidth, gridHeight, GL_RGBA);
-    initFbo(divergenceFbo, gridWidth, gridHeight, GL_RGB16F);
+    colorBuffer.allocate(settings);
+    colorAddFbo.allocate(settings);
+
+    settings.internalformat = GL_RGB32F;
     
-    //compileCode();
+    velocityBuffer.allocate(settings);
+    temperatureBuffer.allocate(settings);
+    pressureBuffer.allocate(settings);
+    velocityAddFbo.allocate(settings);
+
+    settings.internalformat = GL_RGB32F;
+    obstaclesFbo.allocate(settings);
+
+    settings.internalformat = GL_RGB16F;
+    divergenceFbo.allocate(settings);
+    
+    obstaclesFbo.begin();
+    ofClear(0,0);
+    obstaclesFbo.end();
+    
+    divergenceFbo.begin();
+    ofClear(0,0);
+    divergenceFbo.end();
+    
+    velocityAddFbo.begin();
+    ofClear(0,0);
+    velocityAddFbo.end();
+    
+    colorAddFbo.begin();
+    ofClear(0,0);
+    colorAddFbo.end();
     
     temperatureBuffer.src->begin();
     ofClear( ambientTemperature );
     temperatureBuffer.src->end();
     
-    colorAddFbo.allocate(gridWidth,gridHeight,(_HD)?GL_RGBA32F:GL_RGBA);
-    colorAddFbo.begin();
-    ofClear(0,0);
-    colorAddFbo.end();
     
-    velocityAddFbo.allocate(gridWidth,gridHeight,GL_RGB32F);
-    velocityAddFbo.begin();
-    ofClear(0);
-    velocityAddFbo.end();
+    dissipation = 0.999f;
+    velocityDissipation = 0.9f;
+    temperatureDissipation = 0.99f;
+    pressureDissipation = 0.9f;
     
     colorAddPct = 0.0;
     velocityAddPct = 0.0;
@@ -674,12 +692,4 @@ void ofxFluid::renderFrame(float _width, float _height){
     glTexCoord2f(_width, _height); glVertex3f(_width, _height, 0);
     glTexCoord2f(0,_height);  glVertex3f(0,_height, 0);
     glEnd();
-}
-
-// Allocates and cleans an ofFbo
-void ofxFluid::initFbo(ofFbo & _fbo, int _width, int _height, int _internalformat) {
-    _fbo.allocate(_width, _height, _internalformat);
-    _fbo.begin();
-    ofClear(0,0);
-    _fbo.end();
 }

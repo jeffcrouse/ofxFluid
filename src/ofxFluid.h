@@ -92,7 +92,7 @@ public:
     float   temperatureDissipation;
     float   pressureDissipation;
     
-    
+    ofFbo   obstaclesFbo;
     
 private:
     
@@ -119,7 +119,6 @@ private:
     ofxSwapBuffer  pressureBuffer;
     
     ofFbo   divergenceFbo;
-    ofFbo   obstaclesFbo;
     
     vector<punctualForce> constantForces;
     vector<punctualForce> temporalForces;
@@ -146,7 +145,6 @@ private:
     
 // Moved from ofxFxObject
     void    renderFrame(float _width = -1, float _height = -1);
-    void    initFbo(ofFbo & _fbo, int _width, int _height, int _internalformat = GL_RGBA );
     int       width, height;
 };
 #endif
