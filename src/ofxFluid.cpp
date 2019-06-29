@@ -333,7 +333,7 @@ ofxFluid::ofxFluid(){
     
     bObstacles          = true;
     
-    gForce.set(0,-0.98);
+    gForce = glm::vec2(0,-0.98);
 }
 
 void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
@@ -410,12 +410,12 @@ void ofxFluid::setUseObstacles(bool _do){
     }
 }
 
-void ofxFluid::addTemporalForce(ofPoint _pos, ofPoint _vel, ofFloatColor _col, float _rad, float _temp, float _den){
+void ofxFluid::addTemporalForce(glm::vec2 _pos, glm::vec2 _vel, ofFloatColor _col, float _rad, float _temp, float _den){
     punctualForce f;
     
     f.pos = _pos * scale;
     f.vel = _vel;
-    f.color.set(_col.r,_col.g,_col.b);
+    f.color = glm::vec3(_col.r,_col.g,_col.b);
     f.rad = _rad;
     f.temp = _temp;
     f.den = _den;
@@ -423,12 +423,12 @@ void ofxFluid::addTemporalForce(ofPoint _pos, ofPoint _vel, ofFloatColor _col, f
     temporalForces.push_back(f);
 }
 
-void ofxFluid::addConstantForce(ofPoint _pos, ofPoint _vel, ofFloatColor _col, float _rad, float _temp, float _den){
+void ofxFluid::addConstantForce(glm::vec2 _pos, glm::vec2 _vel, ofFloatColor _col, float _rad, float _temp, float _den){
     punctualForce f;
     
     f.pos = _pos * scale;
     f.vel = _vel;
-    f.color.set(_col.r,_col.g,_col.b);
+    f.color = glm::vec3(_col.r,_col.g,_col.b);
     f.rad = _rad;
     f.temp = _temp;
     f.den = _den;

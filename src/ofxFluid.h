@@ -48,9 +48,9 @@
 #include "ofxSwapBuffer.h"
 
 typedef struct  {
-    ofVec3f color;
-    ofVec2f pos;
-    ofVec2f vel;
+    glm::vec3 color;
+    glm::vec2 pos;
+    glm::vec2 vel;
     float   rad;
     float   temp;
     float   den;
@@ -62,7 +62,7 @@ public:
     
     void    allocate(int _width, int _height, float _scale = 0.5, bool _hd = false);
     
-    void    setGravity(ofPoint _force){ gForce = _force; };
+    void    setGravity(glm::vec2 _force){ gForce = _force; };
     void    setUseObstacles(bool _do);
     void    setObstacles(ofBaseHasTexture &_tex);
     
@@ -70,8 +70,8 @@ public:
     void    addColor(ofBaseHasTexture &_tex, float _pct = 1.0);
     void    addVelocity(ofTexture &_tex, float _pct = 1.0);
     void    addVelocity(ofBaseHasTexture &_tex, float _pct = 1.0);
-    void    addTemporalForce(ofPoint _pos, ofPoint _dir, ofFloatColor _col, float _rad = 1.0f, float _temp = 10.f, float _den = 1.f );
-    void    addConstantForce(ofPoint _pos, ofPoint _dir, ofFloatColor _col, float _rad = 1.0f, float _temp = 10.f, float _den = 1.f );
+    void    addTemporalForce(glm::vec2 _pos, glm::vec2 _dir, ofFloatColor _col, float _rad = 1.0f, float _temp = 10.f, float _den = 1.f );
+    void    addConstantForce(glm::vec2 _pos, glm::vec2 _dir, ofFloatColor _col, float _rad = 1.0f, float _temp = 10.f, float _den = 1.f );
     
     virtual ofTexture & getTexture() {
         return colorBuffer.src->getTexture();
@@ -122,7 +122,7 @@ private:
     
     vector<punctualForce> constantForces;
     vector<punctualForce> temporalForces;
-    ofPoint gForce;
+    glm::vec2 gForce;
     
     float   smokeBuoyancy;
     float   smokeWeight;
