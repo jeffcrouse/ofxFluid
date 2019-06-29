@@ -344,6 +344,7 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     gridWidth = width * scale;
     gridHeight = height * scale;
     
+    
     ofFboSettings settings;
     settings.width = gridWidth;
     settings.height = gridHeight;
@@ -674,7 +675,7 @@ void ofxFluid::computeDivergence(){
     computeDivergenceShader.setUniformTexture("tex0", obstaclesFbo.getTexture(), 1);
     
     renderFrame(gridWidth,gridHeight);
-
+    
     computeDivergenceShader.end();
     divergenceFbo.end();
 }
@@ -688,7 +689,9 @@ void ofxFluid::applyImpulse(ofxSwapBuffer& _buffer, ofBaseHasTexture &_baseTex, 
     applyTextureShader.setUniformTexture("tex1", _baseTex.getTexture(), 1);
     applyTextureShader.setUniform1f("pct", _pct);
     applyTextureShader.setUniform1i("isVel", (_isVel)?1:0);
+    
     renderFrame(gridWidth,gridHeight);
+
     applyTextureShader.end();
     _buffer.dst->end();
     _buffer.swap();
@@ -726,7 +729,7 @@ void ofxFluid::applyBuoyancy(){
     applyBuoyancyShader.setUniformTexture("Density", colorBuffer.src->getTexture(), 2);
     
     renderFrame(gridWidth,gridHeight);
-    
+
     applyBuoyancyShader.end();
     velocityBuffer.dst->end();
 }
@@ -734,14 +737,11 @@ void ofxFluid::applyBuoyancy(){
 void ofxFluid::renderFrame(float _width, float _height){
     if (_width == -1) _width = width;
     if (_height == -1) _height = height;
-    
+
     ofSetColor(255,255);
 
-    
-    glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex3f(0, 0, 0);
-    glTexCoord2f(_width, 0); glVertex3f(_width, 0, 0);
-    glTexCoord2f(_width, _height); glVertex3f(_width, _height, 0);
-    glTexCoord2f(0,_height);  glVertex3f(0,_height, 0);
-    glEnd();
+    plane.set(_width, _height, 2, 2);
+    plane.mapTexCoords(0, _height, _width, 0);
+    plane.setPosition(_width/2.0, _height/2.0, 0);
+    plane.drawFaces();
 }

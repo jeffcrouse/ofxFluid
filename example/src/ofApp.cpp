@@ -46,6 +46,7 @@ void ofApp::update(){
     oldM = m;
     ofPoint c = ofPoint(640*0.5, 480*0.5) - m;
     c.normalize();
+    
     fluid.addTemporalForce(m, d, ofFloatColor(c.x,c.y,0.5)*sin(ofGetElapsedTimef()),3.0f);
 
     //  Update
@@ -59,8 +60,8 @@ void ofApp::update(){
 void ofApp::draw(){
     ofBackgroundGradient(ofColor::gray, ofColor::black, OF_GRADIENT_LINEAR);
     
-    //fluid.draw();
-    fluid.drawVelocity();
+    fluid.draw();
+    //fluid.drawVelocity();
 }
 
 //--------------------------------------------------------------

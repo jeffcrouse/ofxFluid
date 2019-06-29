@@ -120,6 +120,8 @@ private:
     
     ofFbo   divergenceFbo;
     
+    
+    
     vector<punctualForce> constantForces;
     vector<punctualForce> temporalForces;
     ofPoint gForce;
@@ -140,10 +142,11 @@ private:
     ofFbo   colorAddFbo, velocityAddFbo;
     float   colorAddPct, velocityAddPct;
     
-    int     colorGlFormat;
+   // int     colorGlFormat;
     
     
 // Moved from ofxFxObject
+    ofPlanePrimitive plane;
     void    renderFrame(float _width = -1, float _height = -1);
     int       width, height;
 };
