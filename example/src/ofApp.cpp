@@ -5,8 +5,8 @@ void ofApp::setup(){
     ofEnableAlphaBlending();
     ofSetCircleResolution(100);
     
-    width = 300;
-    height = 600;
+    width = 512;
+    height = 512;
 
     // Initial Allocation
     //
@@ -18,16 +18,9 @@ void ofApp::setup(){
     fluid.velocityDissipation = 0.99;
     
     fluid.setGravity(ofVec2f(0.0,0.0));
-//    fluid.setGravity(ofVec2f(0.0,0.0098));
+    //fluid.setGravity(ofVec2f(0.0,0.0098));
     
-    //  Set obstacle
-    //
-    fluid.obstaclesFbo.begin();
-    ofSetColor(0,0);
-    ofSetColor(255);
-    ofDrawCircle(width*0.5, height*0.35, 40);
-    fluid.obstaclesFbo.end();
-    fluid.setUseObstacles(false);
+
     
     // Adding constant forces
     //
@@ -38,6 +31,18 @@ void ofApp::setup(){
 
 //--------------------------------------------------------------
 void ofApp::update(){
+    
+    //  Set obstacle
+    //
+    fluid.obstaclesFbo.begin();
+    ofClear(0, 0);
+    ofSetColor(0,0);
+    ofSetColor(255);
+    float x = 128 + cos(ofGetElapsedTimef()) * 128;
+    ofDrawCircle(x, height*0.2, 30);
+    fluid.obstaclesFbo.end();
+    fluid.setUseObstacles(true);
+    
     
     // Adding temporal Force
     //

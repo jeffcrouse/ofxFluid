@@ -361,7 +361,7 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     pressureBuffer.allocate(settings);
     velocityAddFbo.allocate(settings);
 
-    settings.internalformat = GL_RGB32F;
+    settings.internalformat = GL_RGBA;
     obstaclesFbo.allocate(settings);
 
     settings.internalformat = GL_RGB16F;
@@ -603,10 +603,10 @@ void ofxFluid::draw(int x, int y, float _width, float _height){
     ofPushStyle();
     ofSetColor(255);
     
-//    ofEnableAlphaBlending();
-//    if(bObstacles){
-//        textures[0].draw(x,y,_width,_height);
-//    }
+    ofEnableAlphaBlending();
+    if(bObstacles){
+        //obstaclesFbo.draw(x,y,_width,_height);
+    }
     
     colorBuffer.src->draw(x,y,_width,_height);
 

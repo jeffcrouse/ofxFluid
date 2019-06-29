@@ -119,8 +119,7 @@ private:
     ofxSwapBuffer  pressureBuffer;
     
     ofFbo   divergenceFbo;
-    
-    
+
     
     vector<punctualForce> constantForces;
     vector<punctualForce> temporalForces;
