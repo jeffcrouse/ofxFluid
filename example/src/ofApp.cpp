@@ -27,7 +27,7 @@ void ofApp::setup(){
     ofSetColor(255);
     ofDrawCircle(width*0.5, height*0.35, 40);
     fluid.obstaclesFbo.end();
-    fluid.setUseObstacles(true);
+    fluid.setUseObstacles(false);
     
     // Adding constant forces
     //
@@ -59,19 +59,13 @@ void ofApp::update(){
 void ofApp::draw(){
     ofBackgroundGradient(ofColor::gray, ofColor::black, OF_GRADIENT_LINEAR);
     
-    fluid.draw();
+    //fluid.draw();
+    fluid.drawVelocity();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
-    if( key == 'p')
-        bPaint = !bPaint;
-    if( key == 'o')
-        bObstacle = !bObstacle;
-    if( key == 'b')
-        bBounding = !bBounding;
-    if( key == 'c')
-        bClear = !bClear;
+
 }
 
 //--------------------------------------------------------------

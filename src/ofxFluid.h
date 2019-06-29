@@ -46,7 +46,7 @@
 #define OFXFLUID
 
 #include "ofMain.h"
-#include "ofxFXObject.h"
+#include "ofxSwapBuffer.h"
 
 typedef struct  {
     ofVec3f color;
@@ -61,7 +61,7 @@ class ofxFluid  {
 public:
     ofxFluid();
     
-    void    allocate(int _width, int _height, float _scale = 0.5, bool _hd = true);
+    void    allocate(int _width, int _height, float _scale = 0.5, bool _hd = false);
     
     void    setGravity(ofPoint _force){ gForce = _force; };
     void    setUseObstacles(bool _do);

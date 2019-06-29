@@ -44,8 +44,24 @@ ofxFluid::ofxFluid(){
     //passes = 1;
     //internalFormat = GL_RGBA;
     
+    string vertexShader = R"(
+    #version 150
+    uniform mat4 modelViewProjectionMatrix;
+    in vec4 position;
+    in vec2 texcoord;
+    out vec2 texCoordVarying;
+    void main()  {
+        texCoordVarying = texcoord;
+        gl_Position = modelViewProjectionMatrix * position;
+    })";
+
+    
     // ADVECT
     string fragmentAdvectShader = R"(
+    #version 150
+    in vec2 texCoordVarying;
+    out vec4 outputColor;
+
     uniform sampler2DRect tex0;         // Real obstacles
     uniform sampler2DRect backbuffer;
     uniform sampler2DRect VelocityTexture;
@@ -54,30 +70,33 @@ ofxFluid::ofxFluid(){
     uniform float Dissipation;
 
     void main(){
-       vec2 st = gl_TexCoord[0].st;
+       vec2 st = texCoordVarying.st;
        
-       float solid = texture2DRect(tex0, st).r;
+       float solid = texture(tex0, st).r;
        
        if (solid > 0.1) {
-           gl_FragColor = vec4(0.0,0.0,0.0,0.0);
+           outputColor = vec4(0.0,0.0,0.0,0.0);
            return;
        }
        
-       vec2 u = texture2DRect(VelocityTexture, st).rg;
+       vec2 u = texture(VelocityTexture, st).rg;
        vec2 coord =  st - TimeStep * u;
        
-       gl_FragColor = Dissipation * texture2DRect(backbuffer, coord);
+       outputColor = Dissipation * texture(backbuffer, coord);
     })";
     
-    
     advectShader.unload();
+    advectShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
     advectShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentAdvectShader);
     advectShader.bindDefaults();
     advectShader.linkProgram();
-
                        
     // JACOBI
     string fragmentJacobiShader = R"(
+    #version 150
+    in vec2 texCoordVarying;
+    out vec4 outputColor;
+
     uniform sampler2DRect Pressure;
     uniform sampler2DRect Divergence;
     uniform sampler2DRect tex0;
@@ -86,36 +105,41 @@ ofxFluid::ofxFluid(){
     uniform float InverseBeta;
     
     void main() {
-        vec2 st = gl_TexCoord[0].st;
+        vec2 st = texCoordVarying.st;
         
-        vec4 pN = texture2DRect(Pressure, st + vec2(0.0, 1.0));
-        vec4 pS = texture2DRect(Pressure, st + vec2(0.0, -1.0));
-        vec4 pE = texture2DRect(Pressure, st + vec2(1.0, 0.0));
-        vec4 pW = texture2DRect(Pressure, st + vec2(-1.0, 0.0));
-        vec4 pC = texture2DRect(Pressure, st);
+        vec4 pN = texture(Pressure, st + vec2(0.0, 1.0));
+        vec4 pS = texture(Pressure, st + vec2(0.0, -1.0));
+        vec4 pE = texture(Pressure, st + vec2(1.0, 0.0));
+        vec4 pW = texture(Pressure, st + vec2(-1.0, 0.0));
+        vec4 pC = texture(Pressure, st);
         
-        vec3 oN = texture2DRect(tex0, st + vec2(0.0, 1.0)).rgb;
-        vec3 oS = texture2DRect(tex0, st + vec2(0.0, -1.0)).rgb;
-        vec3 oE = texture2DRect(tex0, st + vec2(1.0, 0.0)).rgb;
-        vec3 oW = texture2DRect(tex0, st + vec2(-1.0, 0.0)).rgb;
+        vec3 oN = texture(tex0, st + vec2(0.0, 1.0)).rgb;
+        vec3 oS = texture(tex0, st + vec2(0.0, -1.0)).rgb;
+        vec3 oE = texture(tex0, st + vec2(1.0, 0.0)).rgb;
+        vec3 oW = texture(tex0, st + vec2(-1.0, 0.0)).rgb;
         
         if (oN.x > 0.1) pN = pC;
         if (oS.x > 0.1) pS = pC;
         if (oE.x > 0.1) pE = pC;
         if (oW.x > 0.1) pW = pC;
         
-        vec4 bC = texture2DRect(Divergence, st );
-        gl_FragColor = (pW + pE + pS + pN + Alpha * bC) * InverseBeta;
+        vec4 bC = texture(Divergence, st );
+        outputColor = (pW + pE + pS + pN + Alpha * bC) * InverseBeta;
     })";
     
     
     jacobiShader.unload();
+    jacobiShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
     jacobiShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentJacobiShader);
+    jacobiShader.bindDefaults();
     jacobiShader.linkProgram();
-    
     
     //SUBSTRACT GRADIENT
     string fragmentSubtractGradientShader = R"(
+    #version 150
+    in vec2 texCoordVarying;
+    out vec4 outputColor;
+    
     uniform sampler2DRect Velocity;
     uniform sampler2DRect Pressure;
     uniform sampler2DRect tex0;
@@ -123,24 +147,24 @@ ofxFluid::ofxFluid(){
     uniform float GradientScale;
 
     void main(){
-      vec2 st = gl_TexCoord[0].st;
+      vec2 st = texCoordVarying.st;
       
-      vec3 oC = texture2DRect(tex0, st ).rgb;
+      vec3 oC = texture(tex0, st ).rgb;
       if (oC.x > 0.1) {
-          gl_FragColor.gb = oC.yz;
+          outputColor.gb = oC.yz;
           return;
       }
       
-      float pN = texture2DRect(Pressure, st + vec2(0.0, 1.0)).r;
-      float pS = texture2DRect(Pressure, st + vec2(0.0, -1.0)).r;
-      float pE = texture2DRect(Pressure, st + vec2(1.0, 0.0)).r;
-      float pW = texture2DRect(Pressure, st + vec2(-1.0, 0.0)).r;
-      float pC = texture2DRect(Pressure, st).r;
+      float pN = texture(Pressure, st + vec2(0.0, 1.0)).r;
+      float pS = texture(Pressure, st + vec2(0.0, -1.0)).r;
+      float pE = texture(Pressure, st + vec2(1.0, 0.0)).r;
+      float pW = texture(Pressure, st + vec2(-1.0, 0.0)).r;
+      float pC = texture(Pressure, st).r;
       
-      vec3 oN = texture2DRect(tex0, st + vec2(0.0, 1.0)).rgb;
-      vec3 oS = texture2DRect(tex0, st + vec2(0.0, -1.0)).rgb;
-      vec3 oE = texture2DRect(tex0, st + vec2(1.0, 0.0)).rgb;
-      vec3 oW = texture2DRect(tex0, st + vec2(-1.0, 0.0)).rgb;
+      vec3 oN = texture(tex0, st + vec2(0.0, 1.0)).rgb;
+      vec3 oS = texture(tex0, st + vec2(0.0, -1.0)).rgb;
+      vec3 oE = texture(tex0, st + vec2(1.0, 0.0)).rgb;
+      vec3 oW = texture(tex0, st + vec2(-1.0, 0.0)).rgb;
       
       vec2 obstV = vec2(0.0,0.0);
       vec2 vMask = vec2(1.0,1.0);
@@ -150,61 +174,73 @@ ofxFluid::ofxFluid(){
       if (oE.x > 0.1) { pE = pC; obstV.x = oE.y; vMask.x = 0.0; }\
       if (oW.x > 0.1) { pW = pC; obstV.x = oW.y; vMask.x = 0.0; }\
       
-      vec2 oldV = texture2DRect(Velocity, st).rg;
+      vec2 oldV = texture(Velocity, st).rg;
       vec2 grad = vec2(pE - pW, pN - pS) * GradientScale;
       vec2 newV = oldV - grad;
       
-      gl_FragColor.rg = (vMask * newV) + obstV;
+      outputColor.rg = (vMask * newV) + obstV;
     })";
     
     subtractGradientShader.unload();
+    subtractGradientShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
     subtractGradientShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentSubtractGradientShader);
+    subtractGradientShader.bindDefaults();
     subtractGradientShader.linkProgram();
     
     
     // COMPUTE DIVERGENCE
     string fragmentComputeDivergenceShader =  R"(
+    #version 150
+    in vec2 texCoordVarying;
+    out vec4 outputColor;
+    
     uniform sampler2DRect Velocity;
     uniform sampler2DRect tex0;
 
     uniform float HalfInverseCellSize;
 
     void main(){
-       vec2 st = gl_TexCoord[0].st;
+       vec2 st = texCoordVarying.st;
        
-       vec2 vN = texture2DRect(Velocity, st + vec2(0.0,1.0)).rg;
-       vec2 vS = texture2DRect(Velocity, st + vec2(0.0,-1.0)).rg;
-       vec2 vE = texture2DRect(Velocity, st + vec2(1.0,0.0)).rg;
-       vec2 vW = texture2DRect(Velocity, st + vec2(-1.0,0.0)).rg;
+       vec2 vN = texture(Velocity, st + vec2(0.0,1.0)).rg;
+       vec2 vS = texture(Velocity, st + vec2(0.0,-1.0)).rg;
+       vec2 vE = texture(Velocity, st + vec2(1.0,0.0)).rg;
+       vec2 vW = texture(Velocity, st + vec2(-1.0,0.0)).rg;
        
-       vec3 oN = texture2DRect(tex0, st + vec2(0.0,1.0)).rgb;
-       vec3 oS = texture2DRect(tex0, st + vec2(0.0,-1.0)).rgb;
-       vec3 oE = texture2DRect(tex0, st + vec2(1.0,0.0)).rgb;
-       vec3 oW = texture2DRect(tex0, st + vec2(-1.0,0.0)).rgb;
+       vec3 oN = texture(tex0, st + vec2(0.0,1.0)).rgb;
+       vec3 oS = texture(tex0, st + vec2(0.0,-1.0)).rgb;
+       vec3 oE = texture(tex0, st + vec2(1.0,0.0)).rgb;
+       vec3 oW = texture(tex0, st + vec2(-1.0,0.0)).rgb;
        
        if (oN.x > 0.1) vN = oN.yz;
        if (oS.x > 0.1) vS = oS.yz;
        if (oE.x > 0.1) vE = oE.yz;
        if (oW.x > 0.1) vW = oW.yz;
        
-       gl_FragColor.r = HalfInverseCellSize * (vE.x - vW.x + vN.y - vS.y);
+       outputColor.r = HalfInverseCellSize * (vE.x - vW.x + vN.y - vS.y);
     })";
     
     computeDivergenceShader.unload();
+    computeDivergenceShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
     computeDivergenceShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentComputeDivergenceShader);
+    computeDivergenceShader.bindDefaults();
     computeDivergenceShader.linkProgram();
     
     // APPLY TEXTURE
     string fragmentApplyTextureShader = R"(
+    #version 150
+    in vec2 texCoordVarying;
+    out vec4 outputColor;
+    
     uniform sampler2DRect backbuffer;
     uniform sampler2DRect tex1;
     uniform float   pct;
     uniform int   isVel;
 
     void main(){
-      vec2 st = gl_TexCoord[0].st;
-      vec4 prevFrame = texture2DRect(backbuffer, st);
-      vec4 newFrame = texture2DRect(tex1, st);
+      vec2 st = texCoordVarying.st;
+      vec4 prevFrame = texture(backbuffer, st);
+      vec4 newFrame = texture(tex1, st);
       
       if (isVel!=0){
           newFrame -=0.5;
@@ -212,37 +248,49 @@ ofxFluid::ofxFluid(){
           newFrame.b = 0.5;
       }
 
-      gl_FragColor = prevFrame+newFrame*pct;//mix(prevFrame,newFrame,pct);
+      outputColor = prevFrame+newFrame*pct;//mix(prevFrame,newFrame,pct);
     })";
     
     applyTextureShader.unload();
+    applyTextureShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
     applyTextureShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentApplyTextureShader);
+    applyTextureShader.bindDefaults();
     applyTextureShader.linkProgram();
     
     // APPLY IMPULSE
     string fragmentApplyImpulseShader = R"(
+    #version 150
+    in vec2 texCoordVarying;
+    out vec4 outputColor;
+    
     uniform vec2    Point;
     uniform float   Radius;
     uniform vec3    Value;
 
     void main(){
-      float d = distance(Point, gl_TexCoord[0].st);
+      float d = distance(Point, texCoordVarying.st);
       if (d < Radius) {
           float a = (Radius - d) * 0.5;
           a = min(a, 1.0);
-          gl_FragColor = vec4(Value, a);
+          outputColor = vec4(Value, a);
       } else {
-          gl_FragColor = vec4(0);
+          outputColor = vec4(0);
       }
     })";
     
 
     applyImpulseShader.unload();
+    applyImpulseShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
     applyImpulseShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentApplyImpulseShader);
+    applyImpulseShader.bindDefaults();
     applyImpulseShader.linkProgram();
     
     //APPLY BUOYANCY
     string fragmentApplyBuoyancyShader =  R"(
+    #version 150
+    in vec2 texCoordVarying;
+    out vec4 outputColor;
+    
     uniform sampler2DRect Velocity;
     uniform sampler2DRect Temperature;
     uniform sampler2DRect Density;
@@ -255,22 +303,24 @@ ofxFluid::ofxFluid(){
     uniform vec2  Gravity;
 
     void main(){
-       vec2 st = gl_TexCoord[0].st;
+       vec2 st = texCoordVarying.st;
        
-       float T = texture2DRect(Temperature, st).r;
-       vec2 V = texture2DRect(Velocity, st).rg;
+       float T = texture(Temperature, st).r;
+       vec2 V = texture(Velocity, st).rg;
        
-       gl_FragColor.rg = V;
+       outputColor.rg = V;
        
        if (T > AmbientTemperature) {
-           float D = texture2DRect(Density, st).r;
-           gl_FragColor.rg += (TimeStep * (T - AmbientTemperature) * Sigma - D * Kappa ) * Gravity;
+           float D = texture(Density, st).r;
+           outputColor.rg += (TimeStep * (T - AmbientTemperature) * Sigma - D * Kappa ) * Gravity;
        }
     })";
     
     
     applyBuoyancyShader.unload();
+    applyBuoyancyShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
     applyBuoyancyShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentApplyBuoyancyShader);
+    applyBuoyancyShader.bindDefaults();
     applyBuoyancyShader.linkProgram();
     
     cellSize            = 1.25f; 
@@ -298,6 +348,7 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     settings.width = gridWidth;
     settings.height = gridHeight;
     settings.internalformat = (_HD) ? GL_RGBA32F:GL_RGBA;
+    //settings.textureTarget = GL_TEXTURE_RECTANGLE_ARB;
     
     colorBuffer.allocate(settings);
     colorAddFbo.allocate(settings);
@@ -334,7 +385,6 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     temperatureBuffer.src->begin();
     ofClear( ambientTemperature );
     temperatureBuffer.src->end();
-    
     
     dissipation = 0.999f;
     velocityDissipation = 0.9f;
@@ -479,7 +529,8 @@ void ofxFluid::update(){
     
     ofEnableBlendMode(OF_BLENDMODE_ALPHA);
     ofDisableBlendMode();
-    //  Update temperature, Color (PingPong) and Velocity buffers
+    
+    //  Update temperature, Color and Velocity buffers
     //
     if(colorAddPct>0.0||velocityAddPct>0.0){
         applyImpulse(temperatureBuffer, colorAddFbo, colorAddPct);
@@ -630,6 +681,7 @@ void ofxFluid::computeDivergence(){
 
 void ofxFluid::applyImpulse(ofxSwapBuffer& _buffer, ofBaseHasTexture &_baseTex, float _pct, bool _isVel){
     glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
     _buffer.dst->begin();
     applyTextureShader.begin();
     applyTextureShader.setUniformTexture("backbuffer", *(_buffer.src), 0);

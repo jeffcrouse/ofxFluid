@@ -6,7 +6,7 @@ int main( ){
 
     ofGLWindowSettings settings;
     settings.setSize(1024, 1024);
-    //settings.setGLVersion(3, 2);
+    settings.setGLVersion(3, 2);
     ofCreateWindow(settings);
   
     // this kicks off the running of my app
