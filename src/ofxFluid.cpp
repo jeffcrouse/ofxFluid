@@ -344,6 +344,10 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     gridWidth = width * scale;
     gridHeight = height * scale;
     
+    plane.set(gridWidth, gridHeight, 2, 2);
+    plane.mapTexCoords(0, gridHeight, gridWidth, 0);
+    plane.setPosition(gridWidth/2.0, gridHeight/2.0, 0);
+    
     
     ofFboSettings settings;
     settings.width = gridWidth;
@@ -632,7 +636,7 @@ void ofxFluid::advect(ofxSwapBuffer& _buffer, float _dissipation){
     advectShader.setUniformTexture("VelocityTexture", velocityBuffer.src->getTexture(), 0);
     advectShader.setUniformTexture("backbuffer", _buffer.src->getTexture(), 1);
     advectShader.setUniformTexture("tex0", obstaclesFbo.getTexture(), 2);
-    renderFrame(gridWidth,gridHeight);
+    plane.drawFaces();
     advectShader.end();
     _buffer.dst->end();
 }
@@ -646,7 +650,7 @@ void ofxFluid::jacobi(){
     jacobiShader.setUniformTexture("Divergence", divergenceFbo.getTexture(), 1);
     jacobiShader.setUniformTexture("tex0", obstaclesFbo.getTexture(), 2);
     
-    renderFrame(gridWidth,gridHeight);
+    plane.drawFaces();
     
     jacobiShader.end();
     pressureBuffer.dst->end();
@@ -661,7 +665,7 @@ void ofxFluid::subtractGradient(){
     subtractGradientShader.setUniformTexture("Pressure", pressureBuffer.src->getTexture(), 1);
     subtractGradientShader.setUniformTexture("tex0", obstaclesFbo.getTexture(), 2);
     
-    renderFrame(gridWidth,gridHeight);
+    plane.drawFaces();
     
     subtractGradientShader.end();
     velocityBuffer.dst->end();
@@ -674,7 +678,7 @@ void ofxFluid::computeDivergence(){
     computeDivergenceShader.setUniformTexture("Velocity", velocityBuffer.src->getTexture(), 0);
     computeDivergenceShader.setUniformTexture("tex0", obstaclesFbo.getTexture(), 1);
     
-    renderFrame(gridWidth,gridHeight);
+    plane.drawFaces();
     
     computeDivergenceShader.end();
     divergenceFbo.end();
@@ -690,7 +694,7 @@ void ofxFluid::applyImpulse(ofxSwapBuffer& _buffer, ofBaseHasTexture &_baseTex, 
     applyTextureShader.setUniform1f("pct", _pct);
     applyTextureShader.setUniform1i("isVel", (_isVel)?1:0);
     
-    renderFrame(gridWidth,gridHeight);
+    plane.drawFaces();
 
     applyTextureShader.end();
     _buffer.dst->end();
@@ -707,7 +711,7 @@ void ofxFluid::applyImpulse(ofxSwapBuffer& _buffer, ofPoint _force, ofPoint _val
     applyImpulseShader.setUniform1f("Radius", (float) _radio );
     applyImpulseShader.setUniform3f("Value", (float)_value.x, (float)_value.y, (float)_value.z);
     
-    renderFrame(gridWidth,gridHeight);
+    plane.drawFaces();
     
     applyImpulseShader.end();
     _buffer.src->end();
@@ -728,20 +732,8 @@ void ofxFluid::applyBuoyancy(){
     applyBuoyancyShader.setUniformTexture("Temperature", temperatureBuffer.src->getTexture(), 1);
     applyBuoyancyShader.setUniformTexture("Density", colorBuffer.src->getTexture(), 2);
     
-    renderFrame(gridWidth,gridHeight);
+    plane.drawFaces();
 
     applyBuoyancyShader.end();
     velocityBuffer.dst->end();
-}
-
-void ofxFluid::renderFrame(float _width, float _height){
-    if (_width == -1) _width = width;
-    if (_height == -1) _height = height;
-
-    ofSetColor(255,255);
-
-    plane.set(_width, _height, 2, 2);
-    plane.mapTexCoords(0, _height, _width, 0);
-    plane.setPosition(_width/2.0, _height/2.0, 0);
-    plane.drawFaces();
 }

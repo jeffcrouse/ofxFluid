@@ -42,8 +42,7 @@
  *
  */
  
-#ifndef OFXFLUID
-#define OFXFLUID
+#pragma once
 
 #include "ofMain.h"
 #include "ofxSwapBuffer.h"
@@ -141,12 +140,6 @@ private:
     ofFbo   colorAddFbo, velocityAddFbo;
     float   colorAddPct, velocityAddPct;
     
-   // int     colorGlFormat;
-    
-    
-// Moved from ofxFxObject
     ofPlanePrimitive plane;
-    void    renderFrame(float _width = -1, float _height = -1);
     int       width, height;
 };
-#endif

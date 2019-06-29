@@ -6,8 +6,7 @@
 //  Copyright (c) 2012 PatricioGonzalezVivo.com. All rights reserved.
 //
 
-#ifndef OFXSWAPBUFFER
-#define OFXSWAPBUFFER
+#pragma once
 
 class ofxSwapBuffer {
 public:
@@ -63,5 +62,3 @@ private:
     ofFbo   FBOs[2];    // Real addresses of ping/pong FBO´s  
     int     flag;       // Integer for making a quick swap
 };
-
-#endif

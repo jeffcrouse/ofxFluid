@@ -21,6 +21,6 @@ public:
 		
     ofxFluid fluid;
     
-    ofVec2f oldM;
+    glm::vec2 oldM;
     int     width,height;
 };

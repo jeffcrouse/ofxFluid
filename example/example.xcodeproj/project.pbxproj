@@ -225,9 +225,9 @@
 		331B2291D2642CA1A93D922A /* src */ = {
 			isa = PBXGroup;
 			children = (
-				1FCAC04E22C7B5FD0008C046 /* ofxSwapBuffer.h */,
 				4A668B455165E1F25B6E3238 /* ofxFluid.cpp */,
 				E025DA9850E317B28A4DBE63 /* ofxFluid.h */,
+				1FCAC04E22C7B5FD0008C046 /* ofxSwapBuffer.h */,
 			);
 			name = src;
 			sourceTree = "<group>";

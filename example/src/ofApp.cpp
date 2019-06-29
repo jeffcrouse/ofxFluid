@@ -5,12 +5,12 @@ void ofApp::setup(){
     ofEnableAlphaBlending();
     ofSetCircleResolution(100);
     
-    width = 512;
-    height = 512;
+    width = ofGetWidth();
+    height = ofGetHeight();
 
     // Initial Allocation
     //
-    fluid.allocate(width, height, 0.5);
+    fluid.allocate(width, height, 0.25);
     
     // Seting the gravity set up & injecting the background image
     //
@@ -24,9 +24,7 @@ void ofApp::setup(){
     
     // Adding constant forces
     //
-    fluid.addConstantForce(ofPoint(width*0.5,height*0.85), ofPoint(0,-2), ofFloatColor(0.5,0.1,0.0), 10.f);
-
-    ofSetWindowShape(width, height);
+    fluid.addConstantForce(glm::vec2(width*0.5,height*0.85), glm::vec2(0,-2), ofFloatColor(0.5,0.1,0.0), 10.f);
 }
 
 //--------------------------------------------------------------
@@ -35,25 +33,32 @@ void ofApp::update(){
     //  Set obstacle
     //
     fluid.obstaclesFbo.begin();
+    float w = fluid.obstaclesFbo.getWidth();
+    float h = fluid.obstaclesFbo.getHeight();
     ofClear(0, 0);
     ofSetColor(0,0);
     ofSetColor(255);
-    float x = 128 + cos(ofGetElapsedTimef()) * 128;
-    ofDrawCircle(x, height*0.2, 30);
+    glm::vec2 p;
+    p.x = (w/2.0) + cos(ofGetElapsedTimef()*.8) * (w/2.0);
+    p.y = h * 0.3;
+    ofDrawCircle(p, w*0.1);
     fluid.obstaclesFbo.end();
     fluid.setUseObstacles(true);
+
     
     
     // Adding temporal Force
     //
-    ofPoint m = ofPoint(mouseX,mouseY);
-    ofPoint d = (m - oldM)*10.0;
+    glm::vec2 m = glm::vec2(mouseX,mouseY);
+    glm::vec2 d = (m - oldM) * 10.0;
     oldM = m;
-    ofPoint c = ofPoint(640*0.5, 480*0.5) - m;
-    c.normalize();
+    glm::vec2 c = glm::vec2(640*0.5, 480*0.5) - m;
+    c = glm::normalize(c);
     
-    fluid.addTemporalForce(m, d, ofFloatColor(c.x,c.y,0.5)*sin(ofGetElapsedTimef()),3.0f);
-
+    
+    ofFloatColor color = ofFloatColor(c.x,c.y,0.5) * sin(ofGetElapsedTimef());
+    fluid.addTemporalForce(m, d, color, 3.0f);
+    
     //  Update
     //
     fluid.update();
