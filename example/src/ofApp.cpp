@@ -22,11 +22,11 @@ void ofApp::setup(){
     
     //  Set obstacle
     //
-    fluid.begin();
-    ofSetColor(0,0);
-    ofSetColor(255);
-    ofDrawCircle(width*0.5, height*0.35, 40);
-    fluid.end();
+//    fluid.begin();
+//    ofSetColor(0,0);
+//    ofSetColor(255);
+//    ofDrawCircle(width*0.5, height*0.35, 40);
+//    fluid.end();
     fluid.setUseObstacles(false);
     
     // Adding constant forces

@@ -57,7 +57,7 @@ typedef struct  {
     float   den;
 } punctualForce;
 
-class ofxFluid : public ofxFXObject {
+class ofxFluid  {
 public:
     ofxFluid();
     
@@ -75,7 +75,7 @@ public:
     void    addConstantForce(ofPoint _pos, ofPoint _dir, ofFloatColor _col, float _rad = 1.0f, float _temp = 10.f, float _den = 1.f );
     
     virtual ofTexture & getTexture() {
-        return pingPong.src->getTextureReference();
+        return colorBuffer.src->getTexture();
     };
     
     //ofTexture & getTexture();
@@ -92,7 +92,10 @@ public:
     float   temperatureDissipation;
     float   pressureDissipation;
     
+    
+    
 private:
+    
     void    advect(ofxSwapBuffer& _buffer, float _dissipation);
     void    jacobi();
     void    subtractGradient();
@@ -102,6 +105,7 @@ private:
     void    applyImpulse(ofxSwapBuffer& _buffer, ofPoint _force, ofPoint _value, float _radio = 3.f);
     void    applyBuoyancy();
 
+    ofShader advectShader;
     ofShader jacobiShader;
     ofShader subtractGradientShader;
     ofShader computeDivergenceShader;
@@ -109,7 +113,7 @@ private:
     ofShader applyTextureShader;
     ofShader applyBuoyancyShader;
     
-    
+    ofxSwapBuffer  colorBuffer;
     ofxSwapBuffer  velocityBuffer;
     ofxSwapBuffer  temperatureBuffer;
     ofxSwapBuffer  pressureBuffer;
@@ -138,5 +142,11 @@ private:
     float   colorAddPct, velocityAddPct;
     
     int     colorGlFormat;
+    
+    
+// Moved from ofxFxObject
+    void    renderFrame(float _width = -1, float _height = -1);
+    void    initFbo(ofFbo & _fbo, int _width, int _height, int _internalformat = GL_RGBA );
+    int       width, height;
 };
 #endif

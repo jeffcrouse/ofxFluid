@@ -41,11 +41,12 @@
 #include "ofxFluid.h"
 
 ofxFluid::ofxFluid(){
-    passes = 1;
-    internalFormat = GL_RGBA;
+    //passes = 1;
+    //internalFormat = GL_RGBA;
+
     
     // ADVECT
-    fragmentShader = R"(
+    string fragmentAdvectShader = R"(
     uniform sampler2DRect tex0;         // Real obstacles
     uniform sampler2DRect backbuffer;
     uniform sampler2DRect VelocityTexture;
@@ -68,6 +69,12 @@ ofxFluid::ofxFluid(){
        
        gl_FragColor = Dissipation * texture2DRect(backbuffer, coord);
     })";
+    
+    
+    advectShader.unload();
+    advectShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentAdvectShader);
+    advectShader.linkProgram();
+    
     
                        
     // JACOBI
@@ -288,7 +295,7 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     gridWidth = width * scale;
     gridHeight = height * scale;
     
-    pingPong.allocate(gridWidth,gridHeight,(_HD)?GL_RGBA32F:GL_RGBA);
+    colorBuffer.allocate(gridWidth,gridHeight,(_HD)?GL_RGBA32F:GL_RGBA);
     dissipation = 0.999f;
     velocityBuffer.allocate(gridWidth,gridHeight,GL_RGB32F);
     velocityDissipation = 0.9f;
@@ -300,7 +307,7 @@ void ofxFluid::allocate(int _width, int _height, float _scale, bool _HD){
     initFbo(obstaclesFbo, gridWidth, gridHeight, GL_RGBA);
     initFbo(divergenceFbo, gridWidth, gridHeight, GL_RGB16F);
     
-    compileCode();
+    //compileCode();
     
     temperatureBuffer.src->begin();
     ofClear( ambientTemperature );
@@ -403,7 +410,7 @@ void ofxFluid::addVelocity(ofBaseHasTexture &_tex, float _pct){
 }
 
 void ofxFluid::clear(float _alpha){
-    pingPong.clear();
+    colorBuffer.clear();
     velocityBuffer.clear();
     temperatureBuffer.clear();
     pressureBuffer.clear();
@@ -429,14 +436,14 @@ void ofxFluid::update(){
     
     //  Scale Obstacles
     //
-    if(bObstacles && bUpdate){
-        ofPushStyle();
-        obstaclesFbo.begin();
-        ofSetColor(255, 255);
-        textures[0].draw(0,0,gridWidth,gridHeight);
-        obstaclesFbo.end();
-        ofPopStyle();
-    }
+//    if(bObstacles && bUpdate){
+//        ofPushStyle();
+//        obstaclesFbo.begin();
+//        ofSetColor(255, 255);
+//        textures[0].draw(0,0,gridWidth,gridHeight);
+//        obstaclesFbo.end();
+//        ofPopStyle();
+//    }
     
     //  Pre-Compute
     //
@@ -446,8 +453,8 @@ void ofxFluid::update(){
     advect(temperatureBuffer, temperatureDissipation);
     temperatureBuffer.swap();
     
-    advect(pingPong, dissipation);
-    pingPong.swap();
+    advect(colorBuffer, dissipation);
+    colorBuffer.swap();
     
     applyBuoyancy();
     velocityBuffer.swap();
@@ -462,7 +469,7 @@ void ofxFluid::update(){
     }
     
     if(colorAddPct>0.0){
-        applyImpulse(pingPong, colorAddFbo, colorAddPct);
+        applyImpulse(colorBuffer, colorAddFbo, colorAddPct);
         colorAddFbo.begin();
         ofClear(0,0);
         colorAddFbo.end();
@@ -484,7 +491,7 @@ void ofxFluid::update(){
         for(int i = 0; i < temporalForces.size(); i++){
             applyImpulse(temperatureBuffer, temporalForces[i].pos, ofVec3f(temporalForces[i].temp,temporalForces[i].temp,temporalForces[i].temp), temporalForces[i].rad);
             if (temporalForces[i].color.length() != 0)
-                applyImpulse(pingPong, temporalForces[i].pos, temporalForces[i].color * temporalForces[i].den, temporalForces[i].rad);
+                applyImpulse(colorBuffer, temporalForces[i].pos, temporalForces[i].color * temporalForces[i].den, temporalForces[i].rad);
             if (temporalForces[i].vel.length() != 0)
                 applyImpulse(velocityBuffer , temporalForces[i].pos, temporalForces[i].vel, temporalForces[i].rad);
         }
@@ -497,7 +504,7 @@ void ofxFluid::update(){
         for(int i = 0; i < constantForces.size(); i++){
             applyImpulse(temperatureBuffer, constantForces[i].pos, ofVec3f(constantForces[i].temp,constantForces[i].temp,constantForces[i].temp), constantForces[i].rad);
             if (constantForces[i].color.length() != 0)
-                applyImpulse(pingPong, constantForces[i].pos, constantForces[i].color * constantForces[i].den, constantForces[i].rad);
+                applyImpulse(colorBuffer, constantForces[i].pos, constantForces[i].color * constantForces[i].den, constantForces[i].rad);
             if (constantForces[i].vel.length() != 0)
                 applyImpulse(velocityBuffer , constantForces[i].pos, constantForces[i].vel, constantForces[i].rad);
         }
@@ -531,7 +538,7 @@ void ofxFluid::draw(int x, int y, float _width, float _height){
 //        textures[0].draw(x,y,_width,_height);
 //    }
     
-    pingPong.src->draw(x,y,_width,_height);
+    colorBuffer.src->draw(x,y,_width,_height);
 
     ofPopStyle();
 }
@@ -549,14 +556,14 @@ void ofxFluid::drawVelocity(int x, int y, float _width, float _height){
 
 void ofxFluid::advect(ofxSwapBuffer& _buffer, float _dissipation){
     _buffer.dst->begin();
-    shader.begin();
-    shader.setUniform1f("TimeStep", timeStep);
-    shader.setUniform1f("Dissipation", _dissipation);
-    shader.setUniformTexture("VelocityTexture", velocityBuffer.src->getTexture(), 0);
-    shader.setUniformTexture("backbuffer", _buffer.src->getTexture(), 1);
-    shader.setUniformTexture("tex0", obstaclesFbo.getTexture(), 2);
+    advectShader.begin();
+    advectShader.setUniform1f("TimeStep", timeStep);
+    advectShader.setUniform1f("Dissipation", _dissipation);
+    advectShader.setUniformTexture("VelocityTexture", velocityBuffer.src->getTexture(), 0);
+    advectShader.setUniformTexture("backbuffer", _buffer.src->getTexture(), 1);
+    advectShader.setUniformTexture("tex0", obstaclesFbo.getTexture(), 2);
     renderFrame(gridWidth,gridHeight);
-    shader.end();
+    advectShader.end();
     _buffer.dst->end();
 }
 
@@ -646,10 +653,33 @@ void ofxFluid::applyBuoyancy(){
     
     applyBuoyancyShader.setUniformTexture("Velocity", velocityBuffer.src->getTexture(), 0);
     applyBuoyancyShader.setUniformTexture("Temperature", temperatureBuffer.src->getTexture(), 1);
-    applyBuoyancyShader.setUniformTexture("Density", pingPong.src->getTextureReference(), 2);
+    applyBuoyancyShader.setUniformTexture("Density", colorBuffer.src->getTexture(), 2);
     
     renderFrame(gridWidth,gridHeight);
     
     applyBuoyancyShader.end();
     velocityBuffer.dst->end();
+}
+
+void ofxFluid::renderFrame(float _width, float _height){
+    if (_width == -1) _width = width;
+    if (_height == -1) _height = height;
+    
+    ofSetColor(255,255);
+
+    
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 0); glVertex3f(0, 0, 0);
+    glTexCoord2f(_width, 0); glVertex3f(_width, 0, 0);
+    glTexCoord2f(_width, _height); glVertex3f(_width, _height, 0);
+    glTexCoord2f(0,_height);  glVertex3f(0,_height, 0);
+    glEnd();
+}
+
+// Allocates and cleans an ofFbo
+void ofxFluid::initFbo(ofFbo & _fbo, int _width, int _height, int _internalformat) {
+    _fbo.allocate(_width, _height, _internalformat);
+    _fbo.begin();
+    ofClear(0,0);
+    _fbo.end();
 }
