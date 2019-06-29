@@ -109,6 +109,7 @@ private:
     ofShader applyTextureShader;
     ofShader applyBuoyancyShader;
     
+    
     ofxSwapBuffer  velocityBuffer;
     ofxSwapBuffer  temperatureBuffer;
     ofxSwapBuffer  pressureBuffer;
